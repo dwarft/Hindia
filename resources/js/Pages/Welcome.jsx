@@ -12,69 +12,85 @@ export default function Welcome({ auth }) {
     const headRef = useRef();
 
     useGSAP(() => {
-    // 1. ANIMASI GARIS "ULAR" MENGGAMBAR DARI ATAS KE BAWAH
-    const path = lineRef.current;
-    const pathLength = path.getTotalLength();
+        const path = lineRef.current;
+        const pathLength = path.getTotalLength();
 
-    gsap.set(path, {
-        strokeDasharray: pathLength,
-        strokeDashoffset: pathLength,
-    });
+        gsap.set(path, {
+            strokeDasharray: pathLength,
+            strokeDashoffset: pathLength,
+        });
+        gsap.set(headRef.current, { opacity: 0 });
 
-    gsap.set(headRef.current, { opacity: 0 });
-
-    const tl = gsap.timeline({
-        scrollTrigger: {
+        // SATU ScrollTrigger untuk garis + kepala ular sekaligus,
+        // supaya keduanya selalu sinkron persis (tidak ada lagi delay antar-elemen).
+        // scrub kecil (0.3) = tetap halus mengikuti scroll, tapi jauh lebih responsif
+        // dibanding scrub:1 sebelumnya (yang menyebabkan jeda 1 detik terasa berat di desktop).
+        ScrollTrigger.create({
             trigger: containerRef.current,
             start: "top top",
             end: "bottom bottom",
-            scrub: 1,
-            invalidateOnRefresh: true, // <-- WAJIB: hitung ulang saat refresh
-        }
-    });
+            scrub: 0.3,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+                const offset = pathLength * (1 - self.progress);
+                gsap.set(path, { strokeDashoffset: offset });
 
-    tl.to(path, { strokeDashoffset: 0, ease: "none" }, 0)
-      .to(headRef.current, { opacity: 1, duration: 0.05 }, 0);
+                if (self.progress > 0.002) {
+                    gsap.set(headRef.current, { opacity: 1 });
+                    const point = path.getPointAtLength(pathLength * self.progress);
+                    gsap.set(headRef.current, { attr: { cx: point.x, cy: point.y } });
+                } else {
+                    gsap.set(headRef.current, { opacity: 0 });
+                }
+            }
+        });
 
-    ScrollTrigger.create({
-        trigger: containerRef.current,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true,
-        invalidateOnRefresh: true, // <-- sama, di trigger kedua
-        onUpdate: (self) => {
-            const point = path.getPointAtLength(pathLength * self.progress);
-            gsap.set(headRef.current, { attr: { cx: point.x, cy: point.y } });
-        }
-    });
+        // EFEK PARALLAX BOLA CAHAYA DAN TEKS
+        gsap.utils.toArray('.parallax-item').forEach(layer => {
+            const speed = layer.dataset.speed;
+            gsap.to(layer, {
+                y: () => (ScrollTrigger.maxScroll(window) * speed),
+                ease: "none",
+                scrollTrigger: {
+                    trigger: containerRef.current,
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: true,
+                    invalidateOnRefresh: true
+                }
+            });
+        });
 
-    // ... (parallax & reveal-card tetap sama)
+        // EFEK KARTU MUNCUL
+        gsap.utils.toArray('.reveal-card').forEach(card => {
+            gsap.from(card, {
+                y: 100,
+                opacity: 0,
+                duration: 1,
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 85%",
+                    toggleActions: "play none none reverse"
+                }
+            });
+        });
 
-}, { scope: containerRef });
+    }, { scope: containerRef });
 
-// Tambahkan effect terpisah: refresh paksa setelah font & gambar selesai load,
-// dan setiap kali ukuran window berubah.
-useEffect(() => {
-    const refresh = () => ScrollTrigger.refresh();
-
-    // tunggu semua font web selesai dimuat (Tailwind/Google Fonts dsb)
-    if (document.fonts) {
-        document.fonts.ready.then(refresh);
-    }
-
-    // tunggu semua resource (gambar dll) selesai load
-    window.addEventListener('load', refresh);
-    window.addEventListener('resize', refresh);
-
-    // fallback: refresh sekali lagi setelah delay singkat (jaga-jaga layout shift)
-    const t = setTimeout(refresh, 500);
-
-    return () => {
-        window.removeEventListener('load', refresh);
-        window.removeEventListener('resize', refresh);
-        clearTimeout(t);
-    };
-}, []);
+    // Refresh paksa setelah font & gambar selesai load, dan saat resize
+    useEffect(() => {
+        const refresh = () => ScrollTrigger.refresh();
+        if (document.fonts) document.fonts.ready.then(refresh);
+        window.addEventListener('load', refresh);
+        window.addEventListener('resize', refresh);
+        const t = setTimeout(refresh, 500);
+        return () => {
+            window.removeEventListener('load', refresh);
+            window.removeEventListener('resize', refresh);
+            clearTimeout(t);
+        };
+    }, []);
 
     return (
         <div ref={containerRef} className="relative bg-white text-slate-900 min-h-[300vh] overflow-hidden">
@@ -100,7 +116,7 @@ useEffect(() => {
                 </nav>
             </header>
 
-            {/* --- BOLA CAHAYA PARALLAX (lebih banyak, biru & lime bergantian) --- */}
+            {/* --- BOLA CAHAYA PARALLAX --- */}
             <div className="parallax-item absolute top-[4%] left-[6%] w-72 h-72 bg-[#1e45fb] rounded-full blur-[130px] opacity-[0.18] z-0" data-speed="0.2"></div>
             <div className="parallax-item absolute top-[18%] right-[8%] w-80 h-80 bg-[#cdf22b] rounded-full blur-[140px] opacity-[0.25] z-0" data-speed="-0.15"></div>
             <div className="parallax-item absolute top-[38%] left-[12%] w-64 h-64 bg-[#cdf22b] rounded-full blur-[120px] opacity-[0.2] z-0" data-speed="0.25"></div>
@@ -108,7 +124,7 @@ useEffect(() => {
             <div className="parallax-item absolute top-[75%] left-[20%] w-72 h-72 bg-[#1e45fb] rounded-full blur-[130px] opacity-[0.18] z-0" data-speed="0.3"></div>
             <div className="parallax-item absolute top-[90%] right-[10%] w-64 h-64 bg-[#cdf22b] rounded-full blur-[120px] opacity-[0.22] z-0" data-speed="-0.2"></div>
 
-            {/* --- GARIS SVG "ULAR": dari pojok kiri-atas paling atas, meliuk, melingkar 360° di tengah, lalu ke kanan-bawah --- */}
+            {/* --- GARIS SVG: rute halus, satu loop 360° penuh, tanpa glow --- */}
             <svg
                 preserveAspectRatio="none"
                 viewBox="0 0 1000 3000"
@@ -122,48 +138,35 @@ useEffect(() => {
                         <stop offset="75%" stopColor="#1e45fb" />
                         <stop offset="100%" stopColor="#cdf22b" />
                     </linearGradient>
-
-                    <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="10" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
                 </defs>
 
                 {/*
-                    RUTE ULAR:
-                    - Mulai: pojok kiri-atas, paling atas halaman (50,50)
-                    - Meliuk turun ke arah tengah
-                    - Melingkar penuh 360° di sekitar titik (500,1400) — "badan ular melingkar"
-                    - Lanjut meliuk tidak beraturan ke kanan-bawah
-                    - Berakhir di pojok kanan-bawah halaman
+                    Rute baru: arah selalu maju (tidak ada zig-zag mundur),
+                    loop di tengah dibentuk dari 4 kurva lingkaran presisi (matematis 360° penuh),
+                    lanjutan ke bawah pakai lengkungan besar yang menyambung mulus (tangent-continuous).
                 */}
                 <path
                     ref={lineRef}
-                    d="M 50 50
-                       C 350 150, 650 350, 600 650
-                       C 560 900, 350 1000, 350 1250
-                       C 350 1450, 500 1550, 650 1400
-                       C 700 1300, 650 1150, 500 1150
-                       C 400 1150, 350 1250, 400 1400
-                       C 450 1550, 650 1600, 800 1550
-                       C 950 1500, 950 1700, 850 1900
-                       C 750 2100, 500 2150, 400 2350
-                       C 300 2550, 450 2650, 600 2800
-                       C 700 2900, 850 2850, 950 2950"
+                    d="M 80 40
+                       C 300 60, 520 220, 540 500
+                       C 560 700, 520 880, 500 1030
+                       C 593.9 1030, 670 1106.1, 670 1200
+                       C 670 1293.9, 593.9 1370, 500 1370
+                       C 406.1 1370, 330 1293.9, 330 1200
+                       C 330 1106.1, 406.1 1030, 500 1030
+                       C 640 1060, 820 1180, 830 1450
+                       C 840 1650, 680 1750, 700 1950
+                       C 720 2150, 900 2250, 880 2500
+                       C 860 2700, 700 2800, 950 2950"
                     fill="none"
                     stroke="url(#gradient-line)"
-                    strokeWidth="14"
+                    strokeWidth="10"
                     strokeLinecap="round"
+                    strokeLinejoin="round"
                     vectorEffect="non-scaling-stroke"
-                    filter="url(#neon-glow)"
                 />
 
-                {/* "Kepala ular" — titik terang yang mengikuti ujung garis saat di-scroll */}
-                <circle ref={headRef} r="12" fill="#cdf22b" filter="url(#neon-glow)" />
+                <circle ref={headRef} r="10" fill="#cdf22b" />
             </svg>
 
             {/* --- KONTEN HALAMAN --- */}
@@ -190,24 +193,26 @@ useEffect(() => {
                     </div>
                 </div>
 
+                {/* CARD 1 — dominan #1e45fb */}
                 <div className="h-screen flex items-center justify-start w-full max-w-5xl">
-                    <div className="reveal-card w-full md:w-1/2 p-8 bg-white border-2 border-[#1e45fb]/15 rounded-2xl shadow-[0_10px_40px_rgba(30,69,251,0.15)] relative overflow-hidden">
+                    <div className="reveal-card w-full md:w-1/2 p-8 bg-[#1e45fb] rounded-2xl shadow-[0_10px_40px_rgba(30,69,251,0.35)] relative overflow-hidden">
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#cdf22b] rounded-full blur-3xl opacity-30"></div>
-                        <span className="inline-block mb-3 px-3 py-1 rounded-full bg-[#1e45fb] text-white text-xs font-bold tracking-wide">01</span>
-                        <h2 className="text-3xl font-bold text-slate-900 mb-4">Melingkar Seperti Ular</h2>
-                        <p className="text-slate-600 leading-relaxed">
-                            Garis neon mengikuti rute tidak beraturan dari pojok kiri-atas paling atas halaman, meliuk menuju tengah, lalu membentuk lingkaran penuh 360° layaknya ular yang melingkarkan tubuhnya sebelum melanjutkan perjalanan.
+                        <span className="inline-block mb-3 px-3 py-1 rounded-full bg-[#cdf22b] text-[#0f2fc9] text-xs font-bold tracking-wide">01</span>
+                        <h2 className="text-3xl font-bold text-white mb-4">Melingkar Seperti Ular</h2>
+                        <p className="text-white/80 leading-relaxed">
+                            Garis neon mengikuti rute yang selalu maju dari pojok kiri-atas halaman, meliuk menuju tengah, lalu membentuk lingkaran penuh 360° dengan mulus sebelum melanjutkan perjalanan ke bawah.
                         </p>
                     </div>
                 </div>
 
+                {/* CARD 2 — dominan #cdf22b */}
                 <div className="h-screen flex items-center justify-end w-full max-w-5xl">
-                    <div className="reveal-card w-full md:w-1/2 p-8 bg-white border-2 border-[#cdf22b]/40 rounded-2xl shadow-[0_10px_40px_rgba(205,242,43,0.25)] relative overflow-hidden">
+                    <div className="reveal-card w-full md:w-1/2 p-8 bg-[#cdf22b] rounded-2xl shadow-[0_10px_40px_rgba(205,242,43,0.4)] relative overflow-hidden">
                         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#1e45fb] rounded-full blur-3xl opacity-20"></div>
-                        <span className="inline-block mb-3 px-3 py-1 rounded-full bg-[#cdf22b] text-[#0f2fc9] text-xs font-bold tracking-wide">02</span>
-                        <h2 className="text-3xl font-bold text-slate-900 mb-4">Glow & Parallax Berwarna</h2>
-                        <p className="text-slate-600 leading-relaxed">
-                            Bola-bola cahaya biru dan lime tersebar di banyak titik dengan kecepatan berbeda, memberi kedalaman dan warna yang lebih hidup tanpa menghilangkan nuansa putih yang bersih.
+                        <span className="inline-block mb-3 px-3 py-1 rounded-full bg-[#1e45fb] text-white text-xs font-bold tracking-wide">02</span>
+                        <h2 className="text-3xl font-bold text-[#0f2fc9] mb-4">Parallax Responsif</h2>
+                        <p className="text-[#0f2fc9]/80 leading-relaxed">
+                            Garis dan bola cahaya kini selalu sinkron dengan posisi scroll di perangkat apa pun — tidak ada lagi jeda antara animasi dan gerakan mouse atau sentuhan.
                         </p>
                     </div>
                 </div>
