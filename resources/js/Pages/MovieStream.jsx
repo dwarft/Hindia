@@ -1,47 +1,30 @@
 import { useRef, useState } from 'react';
-import { Play, Plus, Info, Star, Search, Bell, Flame, TrendingUp } from 'lucide-react';
+import { Play, Plus, Star, Search, Bell, Flame } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
-export default function MovieStream() {
+export default function MovieStream({ featuredMovie, movies }) {
     const container = useRef();
     const heroContent = useRef();
     const movieCardsRef = useRef([]);
 
     const [activeTab, setActiveTab] = useState('Trending');
 
-    // Data Dummy Film
-    const featuredMovie = {
-        title: "Cyberpunk 2077: Edgerunners",
-        rating: "9.8",
-        year: "2024",
-        duration: "2j 15m",
-        genre: ["Action", "Sci-Fi", "Cyberpunk"],
-        description: "Seorang anak jalanan yang mencoba bertahan hidup di kota masa depan yang terobsesi dengan teknologi dan modifikasi tubuh.",
-        banner: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1600&auto=format&fit=crop"
-    };
-
-    const movies = [
-        { id: 1, title: "Dune: Part Two", rating: "8.6", genre: "Sci-Fi", poster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=600&auto=format&fit=crop" },
-        { id: 2, title: "Interstellar", rating: "8.7", genre: "Adventure", poster: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&auto=format&fit=crop" },
-        { id: 3, title: "Spider-Man: Across the Spider-Verse", rating: "8.9", genre: "Animation", poster: "https://images.unsplash.com/photo-1635863138275-d9b33299680b?q=80&w=600&auto=format&fit=crop" },
-        { id: 4, title: "Oppenheimer", rating: "8.9", genre: "Biography", poster: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=600&auto=format&fit=crop" },
-        { id: 5, title: "Blade Runner 2049", rating: "8.0", genre: "Sci-Fi", poster: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop" },
-    ];
-
     useGSAP(() => {
-        // Timeline animasi masuk untuk Hero Section
+        // Animasi Hero Section
         const tl = gsap.timeline();
 
-        tl.fromTo(heroContent.current.children, 
+        tl.fromTo(
+            heroContent.current.children,
             { y: 40, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: "power3.out" }
+            { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power3.out' }
         );
 
-        // Stagger animasi masuk untuk kartu film
-        gsap.fromTo(movieCardsRef.current,
+        // Animasi Stagger Kartu Film
+        gsap.fromTo(
+            movieCardsRef.current,
             { y: 50, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out", delay: 0.4 }
+            { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: 'power2.out', delay: 0.4 }
         );
     }, { scope: container });
 
@@ -81,7 +64,6 @@ export default function MovieStream() {
 
             {/* Hero Section */}
             <section className="relative h-[80vh] w-full flex items-end pb-16 px-8 sm:px-12">
-                {/* Background Image */}
                 <div className="absolute inset-0 z-0">
                     <img 
                         src={featuredMovie.banner} 
@@ -92,7 +74,6 @@ export default function MovieStream() {
                     <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent" />
                 </div>
 
-                {/* Hero Content */}
                 <div ref={heroContent} className="relative z-10 max-w-2xl space-y-4">
                     <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-red-500">
                         <span className="flex items-center gap-1 bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/20">
@@ -138,7 +119,6 @@ export default function MovieStream() {
 
             {/* Content List Section */}
             <main className="px-8 sm:px-12 py-8 space-y-8 relative z-20">
-                {/* Filter Tabs */}
                 <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
                     <div className="flex items-center gap-6">
                         {['Trending', 'Rilis Terbaru', 'Rating Tertinggi'].map((tab) => (
@@ -166,7 +146,6 @@ export default function MovieStream() {
                             ref={(el) => (movieCardsRef.current[index] = el)}
                             className="group relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800/80 hover:border-slate-700 transition-all duration-300 hover:-translate-y-2 cursor-pointer shadow-xl"
                         >
-                            {/* Card Image */}
                             <div className="aspect-[2/3] w-full overflow-hidden relative">
                                 <img
                                     src={movie.poster}
@@ -175,14 +154,12 @@ export default function MovieStream() {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
                                 
-                                {/* Rating Badge */}
                                 <div className="absolute top-3 right-3 flex items-center gap-1 bg-slate-950/70 backdrop-blur-md border border-slate-800 px-2 py-1 rounded-lg text-xs font-bold text-amber-400">
                                     <Star className="w-3 h-3 fill-amber-400" />
                                     {movie.rating}
                                 </div>
                             </div>
 
-                            {/* Card Content */}
                             <div className="p-4 space-y-1">
                                 <span className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">
                                     {movie.genre}
