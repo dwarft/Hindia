@@ -11,6 +11,8 @@ export default function MovieStream({ featuredMovie, movies }) {
     const [activeTab, setActiveTab] = useState('Trending');
 
     useGSAP(() => {
+        if (!featuredMovie) return;
+
         // Animasi Hero Section
         const tl = gsap.timeline();
 
@@ -21,18 +23,28 @@ export default function MovieStream({ featuredMovie, movies }) {
         );
 
         // Animasi Stagger Kartu Film
-        gsap.fromTo(
-            movieCardsRef.current,
-            { y: 50, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: 'power2.out', delay: 0.4 }
+        if (movieCardsRef.current.length > 0) {
+            gsap.fromTo(
+                movieCardsRef.current,
+                { y: 50, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: 'power2.out', delay: 0.3 }
+            );
+        }
+    }, { scope: container, dependencies: [featuredMovie, movies] });
+
+    if (!featuredMovie) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+                <p>Memuat data film dari TMDB...</p>
+            </div>
         );
-    }, { scope: container });
+    }
 
     return (
         <div ref={container} className="min-h-screen bg-slate-950 text-white font-sans selection:bg-red-500 selection:text-white">
             
             {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5 bg-gradient-to-b from-slate-950/90 to-transparent backdrop-blur-md">
+            <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-12 py-5 bg-gradient-to-b from-slate-950/90 to-transparent backdrop-blur-md">
                 <div className="flex items-center gap-10">
                     <h1 className="text-2xl font-black tracking-wider text-red-600 uppercase cursor-pointer">
                         STREAM<span className="text-white">X</span>
@@ -63,28 +75,26 @@ export default function MovieStream({ featuredMovie, movies }) {
             </nav>
 
             {/* Hero Section */}
-            <section className="relative h-[80vh] w-full flex items-end pb-16 px-8 sm:px-12">
+            <section className="relative h-[85vh] w-full flex items-end pb-16 px-6 sm:px-12">
                 <div className="absolute inset-0 z-0">
                     <img 
                         src={featuredMovie.banner} 
                         alt={featuredMovie.title} 
                         className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-slate-950/20" />
                     <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent" />
                 </div>
 
                 <div ref={heroContent} className="relative z-10 max-w-2xl space-y-4">
                     <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-red-500">
                         <span className="flex items-center gap-1 bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/20">
-                            <Flame className="w-3.5 h-3.5" /> Trending #1
+                            <Flame className="w-3.5 h-3.5" /> Trending #1 TMDB
                         </span>
                         <span className="text-slate-400">{featuredMovie.year}</span>
-                        <span className="text-slate-400">•</span>
-                        <span className="text-slate-400">{featuredMovie.duration}</span>
                     </div>
 
-                    <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none">
+                    <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
                         {featuredMovie.title}
                     </h1>
 
@@ -95,7 +105,7 @@ export default function MovieStream({ featuredMovie, movies }) {
                         </div>
                         <div className="flex gap-2 ml-4">
                             {featuredMovie.genre.map((g) => (
-                                <span key={g} className="text-xs bg-slate-900/80 border border-slate-800 text-slate-300 px-2 py-0.5 rounded">
+                                <span key={g} className="text-xs bg-slate-900/80 border border-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full">
                                     {g}
                                 </span>
                             ))}
@@ -111,14 +121,14 @@ export default function MovieStream({ featuredMovie, movies }) {
                             <Play className="w-5 h-5 fill-white" /> Tonton Sekarang
                         </button>
                         <button className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-800 font-semibold px-5 py-3 rounded-xl transition-all backdrop-blur-md">
-                            <Plus className="w-5 h-5" /> Favorit
+                            <Plus className="w-5 h-5" /> Tambah Favorit
                         </button>
                     </div>
                 </div>
             </section>
 
             {/* Content List Section */}
-            <main className="px-8 sm:px-12 py-8 space-y-8 relative z-20">
+            <main className="px-6 sm:px-12 py-8 space-y-8 relative z-20">
                 <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
                     <div className="flex items-center gap-6">
                         {['Trending', 'Rilis Terbaru', 'Rating Tertinggi'].map((tab) => (
