@@ -1,4 +1,5 @@
-import { useRef, useState, Link } from 'react';
+import { useRef, useState } from 'react';
+import { Link } from '@inertiajs/react';
 import { Play, Plus, Star, Search, Bell, Flame } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -62,7 +63,7 @@ export default function MovieStream({ featuredMovie, movies }) {
                         <input 
                             type="text" 
                             placeholder="Cari film, genre..." 
-                            className="bg-slate-900/80 border border-slate-800 text-sm rounded-full pl-9 pr-4 py-1.5 focus:outline-none focus:border-red-500 transition-all w-48 focus:w-64"
+                            className="bg-slate-900/80 border border-slate-800 text-sm rounded-full pl-9 pr-4 py-1.5 focus:outline-none focus:border-red-500 transition-all w-48 focus:w-64 text-white placeholder-slate-500"
                         />
                     </div>
                     <button className="p-2 bg-slate-900/80 rounded-full text-slate-300 hover:text-white border border-slate-800">
@@ -117,9 +118,12 @@ export default function MovieStream({ featuredMovie, movies }) {
                     </p>
 
                     <div className="flex items-center gap-4 pt-2">
-                        <button className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-600/30">
+                        <Link 
+                            href={`/movie/${featuredMovie.id}`}
+                            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-600/30"
+                        >
                             <Play className="w-5 h-5 fill-white" /> Tonton Sekarang
-                        </button>
+                        </Link>
                         <button className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-800 font-semibold px-5 py-3 rounded-xl transition-all backdrop-blur-md">
                             <Plus className="w-5 h-5" /> Tambah Favorit
                         </button>
@@ -154,33 +158,41 @@ export default function MovieStream({ featuredMovie, movies }) {
                         <div
                             key={movie.id}
                             ref={(el) => (movieCardsRef.current[index] = el)}
-                            className="group relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800/80 hover:border-slate-700 transition-all duration-300 hover:-translate-y-2 cursor-pointer shadow-xl"
+                            className="group relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800/80 hover:border-slate-700 transition-all duration-300 hover:-translate-y-2 cursor-pointer shadow-xl flex flex-col justify-between"
                         >
-                            <div className="aspect-[2/3] w-full overflow-hidden relative">
-                                <img
-                                    src={movie.poster}
-                                    alt={movie.title}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
-                                
-                                <div className="absolute top-3 right-3 flex items-center gap-1 bg-slate-950/70 backdrop-blur-md border border-slate-800 px-2 py-1 rounded-lg text-xs font-bold text-amber-400">
-                                    <Star className="w-3 h-3 fill-amber-400" />
-                                    {movie.rating}
+                            <div>
+                                <div className="aspect-[2/3] w-full overflow-hidden relative">
+                                    <img
+                                        src={movie.poster}
+                                        alt={movie.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                                    
+                                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-slate-950/70 backdrop-blur-md border border-slate-800 px-2 py-1 rounded-lg text-xs font-bold text-amber-400">
+                                        <Star className="w-3 h-3 fill-amber-400" />
+                                        {movie.rating}
+                                    </div>
+                                </div>
+
+                                <div className="p-4 space-y-1">
+                                    <span className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">
+                                        {movie.genre}
+                                    </span>
+                                    <h3 className="font-bold text-sm text-slate-100 truncate group-hover:text-red-400 transition-colors">
+                                        {movie.title}
+                                    </h3>
                                 </div>
                             </div>
 
-                            <div className="p-4 space-y-1">
-                                <span className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">
-                                    {movie.genre}
-                                </span>
-                                <h3 className="font-bold text-sm text-slate-100 truncate group-hover:text-red-400 transition-colors">
-                                    {movie.title}
-                                </h3>
+                            <div className="p-4 pt-0">
+                                <Link 
+                                    href={`/movie/${movie.id}`} 
+                                    className="block w-full text-center bg-red-600/90 hover:bg-red-600 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
+                                >
+                                    Tonton Sekarang
+                                </Link>
                             </div>
-                            <Link to={`/movie/${movie.id}`} className="play-button">
-                              Tonton Sekarang
-                            </Link>
                         </div>
                     ))}
                 </div>

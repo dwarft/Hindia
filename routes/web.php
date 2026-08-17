@@ -26,5 +26,6 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
+Route::get('/movie/{id}', [MovieController::class, 'show']);
 
 require __DIR__.'/auth.php';
