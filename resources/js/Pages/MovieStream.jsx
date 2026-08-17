@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, Link } from 'react';
 import { Play, Plus, Star, Search, Bell, Flame } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -178,6 +178,9 @@ export default function MovieStream({ featuredMovie, movies }) {
                                     {movie.title}
                                 </h3>
                             </div>
+                            <Link to={`/movie/${movie.id}`} className="play-button">
+                              Tonton Sekarang
+                            </Link>
                         </div>
                     ))}
                 </div>
