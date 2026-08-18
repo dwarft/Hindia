@@ -89,4 +89,41 @@ class MovieController extends Controller
             'movies' => $data['movies'],
         ]);
     }
+
+    public function show($id)
+    {
+        $apiKey = env('TMDB_API_KEY'); // Simpan API Key di file .env
+        
+        // Panggil API TMDB langsung berdasarkan $id
+        $response = Http::get("https://api.themoviedb.org/3/movie/{$id}", [
+            'api_key' => $apiKey,
+            'language' => 'id-ID', // atau 'en-US'
+            'append_to_response' => 'credits', // Untuk mengambil data sutradara & pemain
+        ]);
+
+        if ($response->failed()) {
+            abort(404, 'Film tidak ditemukan');
+        }
+
+        $movieData = $response->json();
+
+        // Mappings / Format data dari response API agar pas ke komponen Inertia
+        $movie = [
+            'id' => $movieData['id'],
+            'title' => $movieData['title'],
+            'year' => substr($movieData['release_date'] ?? '', 0, 4),
+            'duration' => $movieData['runtime'] . ' menit',
+            'rating' => round($movieData['vote_average'], 1),
+            'genres' => collect($movieData['genres'])->pluck('name')->toArray(),
+            'banner' => 'https://image.tmdb.org/t/p/original' . $movieData['backdrop_path'],
+            'poster' => 'https://image.tmdb.org/t/p/w500' . $movieData['poster_path'],
+            'description' => $movieData['overview'],
+            'director' => collect($movieData['credits']['crew'] ?? [])->firstWhere('job', 'Director')['name'] ?? '-',
+            'cast' => collect($movieData['credits']['cast'] ?? [])->take(5)->pluck('name')->toArray(),
+        ];
+
+        return Inertia::render('MovieDetail', [
+            'movie' => $movie,
+        ]);
+    }
 }
