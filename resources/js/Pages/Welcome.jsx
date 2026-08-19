@@ -6,8 +6,6 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Catmull-Rom -> Bezier: menjamin kurva selalu C1-continuous (tangent nyambung
-// di setiap titik), sehingga TIDAK mungkin ada tikungan/menukik tiba-tiba.
 function catmullRomPath(pts) {
     if (pts.length < 2) return '';
     const get = (i) => pts[Math.max(0, Math.min(pts.length - 1, i))];
@@ -37,17 +35,10 @@ function buildSnakePath(scaleY) {
         if (yDesign > 850 && yDesign < 1850) {
             x = Math.max(x, 690);
         } else if (yDesign > 1850 && yDesign < 1980) {
-            // Zona "tenang" SEBELUM loop: berhenti berayun, konvergen lurus
-            // menuju titik masuk loop (Cx=690) — supaya tidak menyilang loop.
-            const p = (yDesign - 1850) / (1980 - 1850);
-            x = 690 - p * (690 - 690); // tetap di 690, lurus masuk
             x = 690;
         } else if (yDesign >= 1980 && yDesign <= 2020) {
-            // Titik masuk/keluar loop — dikunci lurus di Cx
             x = 690;
         } else if (yDesign > 2020 && yDesign < 2150) {
-            // Zona "tenang" SESUDAH loop: keluar lurus dulu menjauh dari loop,
-            // baru sinus dinyalakan lagi setelah aman — supaya tidak masuk lagi ke loop.
             const p = (yDesign - 2020) / (2150 - 2020);
             x = 690 - p * (690 - 310);
         } else if (yDesign >= 2150 && yDesign < 2950) {
@@ -57,20 +48,17 @@ function buildSnakePath(scaleY) {
         pts.push({ x, y: Y(yDesign) });
     }
 
-    // Loop ditempatkan tepat di zona tenang (y=2000), Cx dikunci sama
-    // dengan x jalur masuk/keluar (690) — sehingga sambungannya presisi lurus,
-    // tidak ada offset yang bikin garis nyelonong balik ke dalam lingkaran.
     const insertAt = pts.findIndex((p) => p.y >= Y(2000));
     const Cx = 690;
     const Cy = Y(2000);
 
     const loopPts = [];
     const segs = 28;
-    const R = 60; // radius diperbesar sedikit + digeser Cx supaya loop full di luar jalur utama
+    const R = 60;
     for (let k = 0; k <= segs; k++) {
         const angle = (k / segs) * Math.PI * 2 - Math.PI / 2;
         loopPts.push({
-            x: Cx + 60 + Math.cos(angle) * R, // digeser +60 ke kanan dari garis utama
+            x: Cx + 60 + Math.cos(angle) * R,
             y: Cy + Math.sin(angle) * R,
         });
     }
@@ -86,6 +74,25 @@ export default function Welcome({ auth }) {
     const cursorDotRef = useRef();
     const cursorRingRef = useRef();
     const [scaleY, setScaleY] = useState(1);
+    const [isDark, setIsDark] = useState(false);
+
+    // --- DARK MODE: baca preferensi tersimpan / preferensi sistem saat mount ---
+    useEffect(() => {
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const dark = saved ? saved === 'dark' : prefersDark;
+        setIsDark(dark);
+        document.documentElement.classList.toggle('dark', dark);
+    }, []);
+
+    const toggleDark = () => {
+        setIsDark((prev) => {
+            const next = !prev;
+            document.documentElement.classList.toggle('dark', next);
+            localStorage.setItem('theme', next ? 'dark' : 'light');
+            return next;
+        });
+    };
 
     useEffect(() => {
         const updateScale = () => {
@@ -106,12 +113,11 @@ export default function Welcome({ auth }) {
         };
     }, []);
 
-    // --- CURSOR KUSTOM: dot + ring mengikuti mouse dengan smoothing ---
     useEffect(() => {
         const dot = cursorDotRef.current;
         const ring = cursorRingRef.current;
         if (!dot || !ring) return;
-        if (window.matchMedia('(pointer: coarse)').matches) return; // skip di HP/touch
+        if (window.matchMedia('(pointer: coarse)').matches) return;
 
         const moveDot = gsap.quickTo(dot, 'x', { duration: 0.1, ease: 'power2.out' });
         const moveDotY = gsap.quickTo(dot, 'y', { duration: 0.1, ease: 'power2.out' });
@@ -151,7 +157,6 @@ export default function Welcome({ auth }) {
         gsap.set(path, { strokeDasharray: pathLength, strokeDashoffset: pathLength });
         gsap.set(headRef.current, { opacity: 0 });
 
-        // Denyut halus terus-menerus pada kepala garis
         gsap.to(headRef.current, {
             scale: 1.4,
             transformOrigin: '50% 50%',
@@ -188,7 +193,6 @@ export default function Welcome({ auth }) {
         };
         gsap.ticker.add(render);
 
-        // Parallax bola cahaya
         gsap.utils.toArray('.parallax-item').forEach((layer) => {
             const speed = layer.dataset.speed;
             gsap.to(layer, {
@@ -204,7 +208,6 @@ export default function Welcome({ auth }) {
             });
         });
 
-        // Kartu muncul + efek "garis sampai" (pulse glow saat masuk viewport)
         gsap.utils.toArray('.reveal-card').forEach((card) => {
             gsap.from(card, {
                 y: 100,
@@ -241,25 +244,49 @@ export default function Welcome({ auth }) {
     const { d: pathD } = buildSnakePath(scaleY);
 
     return (
-        <div ref={containerRef} className="relative bg-white text-slate-900 min-h-[300vh] overflow-hidden cursor-none md:cursor-none">
+        <div ref={containerRef} className="relative bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-[300vh] overflow-hidden cursor-none md:cursor-none transition-colors duration-500">
             <Head title="Welcome - GSAP Experience" />
 
-            {/* --- CURSOR KUSTOM --- */}
-            <div ref={cursorDotRef} className="hidden md:block fixed top-0 left-0 w-2 h-2 rounded-full bg-[#1e45fb] pointer-events-none z-[999] opacity-0"></div>
+            <div ref={cursorDotRef} className="hidden md:block fixed top-0 left-0 w-2 h-2 rounded-full bg-[#1e45fb] dark:bg-[#cdf22b] pointer-events-none z-[999] opacity-0"></div>
             <div ref={cursorRingRef} className="hidden md:flex fixed top-0 left-0 w-8 h-8 rounded-full border-2 border-[#cdf22b] pointer-events-none z-[998] opacity-0 items-center justify-center"></div>
 
             <header className="fixed top-0 right-0 p-6 z-50">
-                <nav className="flex gap-4 items-center bg-white/80 backdrop-blur-md px-4 py-2 rounded-full border border-[#1e45fb]/10 shadow-sm">
+                <nav className="flex gap-3 items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full border border-[#1e45fb]/10 dark:border-[#cdf22b]/10 shadow-sm">
+                    {/* Toggle dark mode */}
+                    <button
+                        onClick={toggleDark}
+                        aria-label="Toggle dark mode"
+                        className="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 dark:text-[#cdf22b] hover:bg-black/5 dark:hover:bg-white/10 transition"
+                    >
+                        {isDark ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="5" />
+                                <line x1="12" y1="1" x2="12" y2="3" />
+                                <line x1="12" y1="21" x2="12" y2="23" />
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                                <line x1="1" y1="12" x2="3" y2="12" />
+                                <line x1="21" y1="12" x2="23" y2="12" />
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                            </svg>
+                        )}
+                    </button>
+
                     {auth?.user ? (
-                        <Link href={route('dashboard')} className="font-semibold text-[#1e45fb] hover:text-[#0f2fc9] transition">
+                        <Link href={route('dashboard')} className="font-semibold text-[#1e45fb] dark:text-[#cdf22b] hover:text-[#0f2fc9] dark:hover:text-white transition">
                             Dashboard
                         </Link>
                     ) : (
                         <>
-                            <Link href={route('login')} className="font-semibold text-slate-500 hover:text-[#1e45fb] transition">
+                            <Link href={route('login')} className="font-semibold text-slate-500 dark:text-slate-300 hover:text-[#1e45fb] dark:hover:text-[#cdf22b] transition">
                                 Log in
                             </Link>
-                            <Link href={route('register')} className="font-semibold text-white bg-[#1e45fb] hover:bg-[#0f2fc9] px-4 py-1.5 rounded-full transition shadow-[0_4px_14px_rgba(30,69,251,0.35)]">
+                            <Link href={route('register')} className="font-semibold text-white bg-[#1e45fb] hover:bg-[#0f2fc9] dark:bg-[#cdf22b] dark:text-[#0f2fc9] dark:hover:bg-white px-4 py-1.5 rounded-full transition shadow-[0_4px_14px_rgba(30,69,251,0.35)]">
                                 Register
                             </Link>
                         </>
@@ -267,12 +294,12 @@ export default function Welcome({ auth }) {
                 </nav>
             </header>
 
-            <div className="parallax-item absolute top-[4%] left-[6%] w-72 h-72 bg-[#1e45fb] rounded-full blur-[130px] opacity-[0.18] z-0" data-speed="0.2"></div>
-            <div className="parallax-item absolute top-[18%] right-[8%] w-80 h-80 bg-[#cdf22b] rounded-full blur-[140px] opacity-[0.25] z-0" data-speed="-0.15"></div>
-            <div className="parallax-item absolute top-[38%] left-[12%] w-64 h-64 bg-[#cdf22b] rounded-full blur-[120px] opacity-[0.2] z-0" data-speed="0.25"></div>
-            <div className="parallax-item absolute top-[55%] right-[15%] w-96 h-96 bg-[#1e45fb] rounded-full blur-[150px] opacity-[0.15] z-0" data-speed="-0.1"></div>
-            <div className="parallax-item absolute top-[75%] left-[20%] w-72 h-72 bg-[#1e45fb] rounded-full blur-[130px] opacity-[0.18] z-0" data-speed="0.3"></div>
-            <div className="parallax-item absolute top-[90%] right-[10%] w-64 h-64 bg-[#cdf22b] rounded-full blur-[120px] opacity-[0.22] z-0" data-speed="-0.2"></div>
+            <div className="parallax-item absolute top-[4%] left-[6%] w-72 h-72 bg-[#1e45fb] rounded-full blur-[130px] opacity-[0.18] dark:opacity-[0.28] z-0" data-speed="0.2"></div>
+            <div className="parallax-item absolute top-[18%] right-[8%] w-80 h-80 bg-[#cdf22b] rounded-full blur-[140px] opacity-[0.25] dark:opacity-[0.15] z-0" data-speed="-0.15"></div>
+            <div className="parallax-item absolute top-[38%] left-[12%] w-64 h-64 bg-[#cdf22b] rounded-full blur-[120px] opacity-[0.2] dark:opacity-[0.12] z-0" data-speed="0.25"></div>
+            <div className="parallax-item absolute top-[55%] right-[15%] w-96 h-96 bg-[#1e45fb] rounded-full blur-[150px] opacity-[0.15] dark:opacity-[0.25] z-0" data-speed="-0.1"></div>
+            <div className="parallax-item absolute top-[75%] left-[20%] w-72 h-72 bg-[#1e45fb] rounded-full blur-[130px] opacity-[0.18] dark:opacity-[0.28] z-0" data-speed="0.3"></div>
+            <div className="parallax-item absolute top-[90%] right-[10%] w-64 h-64 bg-[#cdf22b] rounded-full blur-[120px] opacity-[0.22] dark:opacity-[0.13] z-0" data-speed="-0.2"></div>
 
             <svg
                 preserveAspectRatio="none"
@@ -305,7 +332,7 @@ export default function Welcome({ auth }) {
             <div className="relative z-20 container mx-auto px-6 flex flex-col items-center">
 
                 <div className="h-screen flex flex-col items-center justify-center text-center">
-                    <span className="parallax-item inline-block mb-4 px-4 py-1 rounded-full bg-[#cdf22b]/20 border border-[#cdf22b]/40 text-[#0f2fc9] text-sm font-semibold tracking-wide" data-speed="-0.15">
+                    <span className="parallax-item inline-block mb-4 px-4 py-1 rounded-full bg-[#cdf22b]/20 border border-[#cdf22b]/40 text-[#0f2fc9] dark:text-[#cdf22b] dark:bg-[#cdf22b]/10 text-sm font-semibold tracking-wide" data-speed="-0.15">
                         REACT × LARAVEL × GSAP
                     </span>
                     <h1
@@ -315,16 +342,16 @@ export default function Welcome({ auth }) {
                         Scroll ke Bawah
                     </h1>
                     <p
-                        className="parallax-item text-xl text-slate-600 max-w-lg bg-white/80 p-4 rounded-xl backdrop-blur-sm border border-[#1e45fb]/10 shadow-[0_8px_30px_rgba(30,69,251,0.08)]"
+                        className="parallax-item text-xl text-slate-600 dark:text-slate-300 max-w-lg bg-white/80 dark:bg-slate-900/70 p-4 rounded-xl backdrop-blur-sm border border-[#1e45fb]/10 dark:border-[#cdf22b]/10 shadow-[0_8px_30px_rgba(30,69,251,0.08)] dark:shadow-none"
                         data-speed="-0.1"
                     >
                         Rasakan keajaiban interaksi antara komponen React, kekuatan Laravel, dan kelancaran animasi GSAP.
                     </p>
-                    <div className="animate-bounce mt-16 text-[#1e45fb] text-4xl">↓</div>
+                    <div className="animate-bounce mt-16 text-[#1e45fb] dark:text-[#cdf22b] text-4xl">↓</div>
                 </div>
 
                 <div className="h-screen flex items-center justify-start w-full max-w-5xl">
-                    <div className="reveal-card w-full md:w-1/2 p-8 bg-[#1e45fb] rounded-2xl shadow-[0_10px_40px_rgba(30,69,251,0.35)] relative overflow-hidden">
+                    <div className="reveal-card w-full md:w-1/2 p-8 bg-[#1e45fb] dark:bg-[#1e45fb]/90 rounded-2xl shadow-[0_10px_40px_rgba(30,69,251,0.35)] relative overflow-hidden">
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#cdf22b] rounded-full blur-3xl opacity-30"></div>
                         <span className="inline-block mb-3 px-3 py-1 rounded-full bg-[#cdf22b] text-[#0f2fc9] text-xs font-bold tracking-wide">01</span>
                         <h2 className="text-3xl font-bold text-white mb-4">Meliuk & Mengalir</h2>
@@ -335,7 +362,7 @@ export default function Welcome({ auth }) {
                 </div>
 
                 <div className="h-screen flex items-center justify-end w-full max-w-5xl">
-                    <div className="reveal-card w-full md:w-1/2 p-8 bg-[#cdf22b] rounded-2xl shadow-[0_10px_40px_rgba(205,242,43,0.4)] relative overflow-hidden">
+                    <div className="reveal-card w-full md:w-1/2 p-8 bg-[#cdf22b] dark:bg-[#cdf22b]/95 rounded-2xl shadow-[0_10px_40px_rgba(205,242,43,0.4)] relative overflow-hidden">
                         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#1e45fb] rounded-full blur-3xl opacity-20"></div>
                         <span className="inline-block mb-3 px-3 py-1 rounded-full bg-[#1e45fb] text-white text-xs font-bold tracking-wide">02</span>
                         <h2 className="text-3xl font-bold text-[#0f2fc9] mb-4">Merespon Kehadiran</h2>
