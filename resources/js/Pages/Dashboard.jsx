@@ -160,6 +160,44 @@ export default function Dashboard({ auth }) {
                         </div>
                     </div>
 
+                    {/* Rekomendasi Untukmu */}
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <h3 className="text-base font-bold text-white">
+                                Rekomendasi Untukmu
+                            </h3>
+                            <Link href="/movies" className="text-xs font-semibold text-red-500 hover:text-red-400 flex items-center gap-1">
+                                Lihat Semua <ChevronRight className="w-3.5 h-3.5" />
+                            </Link>
+                        </div>
+                            
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                            {[
+                                { id: 155, title: 'The Dark Knight', poster: '8m1M38YgBch9oQyIflV3pW3rRk0.jpg', rating: 8.9 },
+                                { id: 157336, title: 'Interstellar', poster: 'gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', rating: 8.6 },
+                                { id: 27205, title: 'Inception', poster: '9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg', rating: 8.8 },
+                                { id: 550, title: 'Fight Club', poster: 'pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', rating: 8.4 },
+                                { id: 680, title: 'Pulp Fiction', poster: 'd5iIlFn5s0ImszYzBPb8JPIfbXD.jpg', rating: 8.5 },
+                            ].map((movie) => (
+                                <Link
+                                    key={movie.id}
+                                    href={`/movie/${movie.id}`}
+                                    className="group relative rounded-xl overflow-hidden bg-slate-800 aspect-[2/3] shadow-lg hover:scale-[1.03] transition-transform"
+                                >
+                                    <img
+                                        src={`https://image.tmdb.org/t/p/w300/${movie.poster}`}
+                                        alt={movie.title}
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                                        <p className="text-xs font-bold text-white line-clamp-2">{movie.title}</p>
+                                        <p className="text-[10px] text-amber-400 font-semibold mt-1">★ {movie.rating}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </AuthenticatedLayout>
