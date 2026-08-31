@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Film, PlayCircle, Heart, ShieldCheck, Zap, ChevronRight } from 'lucide-react';
 
-export default function Dashboard({ auth }) {
+export default function Dashboard({ auth, watchlistCount = 0 }) {
     const user = auth.user;
 
     return (
@@ -57,14 +57,14 @@ export default function Dashboard({ auth }) {
                         </div>
 
                         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center gap-4 shadow-lg backdrop-blur-sm">
-                            <div className="p-3 bg-pink-500/10 text-pink-500 rounded-xl border border-pink-500/20">
-                                <Heart className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daftar Favorit</p>
-                                <p className="text-2xl font-bold text-white">12 Judul</p>
-                            </div>
-                        </div>
+    <div className="p-3 bg-pink-500/10 text-pink-500 rounded-xl border border-pink-500/20">
+        <Heart className="w-6 h-6" />
+    </div>
+    <div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daftar Favorit</p>
+        <p className="text-2xl font-bold text-white">{watchlistCount} Judul</p>
+    </div>
+</div>
 
                         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center gap-4 shadow-lg backdrop-blur-sm">
                             <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl border border-emerald-500/20">
