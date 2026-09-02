@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\MovieController;
+use App\Http\Controllers\ReviewController;
 
 
 Route::get('/', function () {
@@ -30,5 +31,11 @@ Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
 Route::get('/movie/{id}', [MovieController::class, 'show']);
 
 Route::get('/movie/{id}', [MovieController::class, 'show'])->name('movies.show');
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    // ... route lain
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+});
 
 require __DIR__.'/auth.php';

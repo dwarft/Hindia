@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
+use App\Models\Review;
 
 class MovieController extends Controller
 {
@@ -122,8 +123,14 @@ class MovieController extends Controller
             'cast' => collect($movieData['credits']['cast'] ?? [])->take(5)->pluck('name')->toArray(),
         ];
 
+        $reviews = Review::with('user:id,name')
+        ->where('movie_id', $id)
+        ->latest()
+        ->get();
+
         return Inertia::render('MovieDetail', [
             'movie' => $movie,
+            'reviews' => $reviews,
         ]);
     }
 }
