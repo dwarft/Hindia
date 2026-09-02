@@ -7,6 +7,19 @@ import { Star, Heart, ArrowLeft, Play, X, Clock, Calendar, Film } from 'lucide-r
 export default function Show({ movie, isWatchlisted }) {
     const [showTrailer, setShowTrailer] = useState(false);
     const [inWatchlist, setInWatchlist] = useState(isWatchlisted);
+    const { auth } = usePage().props;
+    const { data, setData, post, processing, reset, errors } = useForm({
+        movie_id: movie.id,
+        rating: 5,
+        comment: '',
+    });
+
+    const submitReview = (e) => {
+        e.preventDefault();
+        post(route('reviews.store'), {
+            onSuccess: () => reset('comment'),
+        });
+    };
 
     // Ambil trailer youtube dari data
     const trailerKey = movie.videos?.results?.find(v => v.type === 'Trailer')?.key || movie.videos?.results[0]?.key;
@@ -180,6 +193,84 @@ export default function Show({ movie, isWatchlisted }) {
                 )}
 
             </div>
+
+            <div className="mt-12 space-y-8 bg-slate-900/60 p-6 sm:p-8 rounded-3xl border border-slate-800">
+            <h3 className="text-xl font-bold text-white">Ulasan Komunitas</h3>
+
+            {/* Form Input Ulasan */}
+            <form onSubmit={submitReview} className="space-y-4">
+                <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-2">Beri Rating</label>
+                    <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                                type="button"
+                                key={star}
+                                onClick={() => setData('rating', star)}
+                                className="focus:outline-none transition-transform hover:scale-110"
+                            >
+                                <Star
+                                    className={`w-6 h-6 ${
+                                        star <= data.rating
+                                            ? 'text-amber-400 fill-amber-400'
+                                            : 'text-slate-600'
+                                    }`}
+                                />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div>
+                    <textarea
+                        value={data.comment}
+                        onChange={(e) => setData('comment', e.target.value)}
+                        placeholder="Tulis pendapatmu tentang film ini..."
+                        rows="3"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none"
+                    />
+                    {errors.comment && <p className="text-xs text-red-500 mt-1">{errors.comment}</p>}
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={processing}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
+                >
+                    {processing ? 'Kirim...' : 'Kirim Ulasan'}
+                </button>
+            </form>
+
+            {/* Daftar Ulasan */}
+            <div className="space-y-4 pt-4 border-t border-slate-800">
+                {reviews.length === 0 ? (
+                    <p className="text-xs text-slate-500">Belum ada ulasan untuk film ini. Jadilah yang pertama!</p>
+                ) : (
+                    reviews.map((rev) => (
+                        <div key={rev.id} className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-sm text-slate-200">{rev.user.name}</span>
+                                    <div className="flex items-center text-amber-400 text-xs">
+                                        <Star className="w-3.5 h-3.5 fill-amber-400 mr-1" />
+                                        {rev.rating}/5
+                                    </div>
+                                </div>
+                                {rev.user_id === auth.user.id && (
+                                    <button
+                                        onClick={() => route('reviews.destroy', rev.id)}
+                                        className="text-slate-500 hover:text-red-400 transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <p className="text-sm text-slate-300">{rev.comment}</p>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
         </AuthenticatedLayout>
     );
 }
