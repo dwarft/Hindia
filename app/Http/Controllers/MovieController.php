@@ -133,4 +133,41 @@ class MovieController extends Controller
             'reviews' => $reviews,
         ]);
     }
+
+    public function explore(Request $request)
+{
+    $apiKey = config('services.tmdb.key'); // atau env('TMDB_API_KEY')
+    $query = $request->input('query');
+    $genreId = $request->input('genre');
+    $sortBy = $request->input('sort_by', 'popularity.desc');
+
+    if ($query) {
+        // Jika user mengetik pencarian kata kunci
+        $response = Http::get("https://api.themoviedb.org/3/search/movie", [
+            'api_key' => $apiKey,
+            'query'   => $query,
+        ]);
+    } else {
+        // Jika user filter berdasarkan genre / sort
+        $params = [
+            'api_key'  => $apiKey,
+            'sort_by'  => $sortBy,
+        ];
+        if ($genreId) {
+            $params['with_genres'] = $genreId;
+        }
+        $response = Http::get("https://api.themoviedb.org/3/discover/movie", $params);
+    }
+
+    // Fetch daftar genre untuk dropdown filter
+    $genresResponse = Http::get("https://api.themoviedb.org/3/genre/movie/list", [
+        'api_key' => $apiKey,
+    ]);
+
+    return Inertia::render('Movies/Explore', [
+        'movies'       => $response->json()['results'] ?? [],
+        'genres'       => $genresResponse->json()['genres'] ?? [],
+        'filters'      => $request->only(['query', 'genre', 'sort_by']),
+    ]);
+}
 }

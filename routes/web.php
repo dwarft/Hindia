@@ -7,6 +7,13 @@ use Inertia\Inertia;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ReviewController;
 
+use App\Http\Controllers\MovieController;
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    // ... route lain
+    Route::get('/explore', [MovieController::class, 'explore'])->name('movies.explore');
+});
+
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
