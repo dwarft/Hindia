@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { 
     LayoutDashboard, 
-    Film, 
+    Compass, 
     Heart, 
-    User, 
     LogOut, 
     Menu, 
     X, 
@@ -17,7 +16,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Daftar link navigasi di Sidebar
+    // Daftar link navigasi di Sidebar (disesuaikan dengan route terdaftar)
     const navItems = [
         {
             name: 'Dashboard',
@@ -26,16 +25,16 @@ export default function AuthenticatedLayout({ header, children }) {
             active: route().current('dashboard'),
         },
         {
-            name: 'Katalog Film',
-            href: '/movies', // Sesuaikan dengan route film milikmu
-            icon: Film,
-            active: route().current('movies*'),
+            name: 'Eksplor Film',
+            href: route('movies.explore'),
+            icon: Compass,
+            active: route().current('movies.explore'),
         },
         {
             name: 'Favorit Saya',
-            href: '/watchlist', // Sesuaikan dengan route watchlist milikmu
+            href: route('watchlist.index'),
             icon: Heart,
-            active: route().current('watchlist*'),
+            active: route().current('watchlist.index'),
         },
     ];
 
@@ -59,7 +58,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 <div>
                     {/* Header Sidebar / Brand Logo */}
                     <div className="flex items-center justify-between h-16 px-6 border-b border-slate-800">
-                        <Link href="/" className="flex items-center gap-2.5">
+                        <Link href={route('dashboard')} className="flex items-center gap-2.5">
                             <div className="p-2 bg-red-600 rounded-xl shadow-lg shadow-red-600/40">
                                 <Tv className="w-5 h-5 text-white" />
                             </div>
@@ -106,11 +105,11 @@ export default function AuthenticatedLayout({ header, children }) {
                 <div className="p-4 border-t border-slate-800 space-y-2">
                     <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
                         <div className="w-9 h-9 rounded-lg bg-red-600/20 text-red-400 flex items-center justify-center font-bold text-sm border border-red-500/30">
-                            {user.name.charAt(0).toUpperCase()}
+                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-slate-200 truncate">{user.name}</p>
-                            <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
+                            <p className="text-xs font-bold text-slate-200 truncate">{user?.name}</p>
+                            <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
                         </div>
                     </div>
 
@@ -155,7 +154,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         )}
                     </div>
 
-                    {/* Badge / Status VIP Topbar */}
+                    {/* Badge Status */}
                     <div className="flex items-center gap-3">
                         <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             <Shield className="w-3.5 h-3.5" /> Mode Terotentikasi
