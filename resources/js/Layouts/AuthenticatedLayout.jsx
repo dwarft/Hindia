@@ -12,6 +12,8 @@ import {
     Shield
 } from 'lucide-react';
 
+import Toast from '@/Components/Toast';
+
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -167,7 +169,21 @@ export default function AuthenticatedLayout({ header, children }) {
                     {children}
                 </main>
             </div>
+            <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+                {/* Sidebar & Topbar */}
+                        
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+                    <main className="flex-1">
+                        {children}
+                    </main>
+                </div>
+                        
+                {/* Pasang Toast Notification di akhir layout */}
+                <Toast />
+            </div>
 
         </div>
+        
     );
 }
